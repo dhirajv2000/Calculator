@@ -72,6 +72,5 @@ function evaluate(tokens) {
         let operator = operatorStack.pop();
         valueStack.push(performOperation(value1, value2, operator))
     } 
-    //return parseFloat(top(valueStack).toFixed(7))
-    return top(valueStack)
+    return parseFloat(top(valueStack).toFixed(7))
 }
