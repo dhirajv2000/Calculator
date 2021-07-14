@@ -29,107 +29,124 @@ function Calculator() {
         myWorker.onmessage = function (e) {
             bracketCount = 0;
             expressionArray = []
-            expressionArray.push(e.data)
+            expressionArray.push(...e.data)
             textBox.textContent = expressionArray.join("")
             myWorker.terminate();
         }
     }
 
+
     //Handles button clicks
-    this.clickHandler = function () {
+    this.callBacks = function (buttonName) {
         //Clear Screen
-        if (this.id === "AC") {
-            bracketCount = 0;
-            expressionArray = [];
-            expressionBox.textContent = "";
-            textBox.textContent = "";
+        if (buttonName === "AC") {
+            return function () {
+                bracketCount = 0;
+                expressionArray = [];
+                expressionBox.textContent = "";
+                textBox.textContent = "";
+            } 
         } 
         //Backspace
-        else if (this.id === "⌫") {
-            if(parseFloat(expressionArray[expressionArray.length-1])){
-                expressionArray[expressionArray.length - 1] = expressionArray[expressionArray.length - 1].slice(0, -1);
-                if(expressionArray[expressionArray.length - 1] == "") expressionArray.pop()
-            }
-            else {
-                expressionArray.pop()
-            }
-            textBox.textContent = expressionArray.join("")
+        else if (buttonName === "⌫") {
+            return function () {
+                if(parseFloat(expressionArray[expressionArray.length-1])){
+                    expressionArray[expressionArray.length - 1] = expressionArray[expressionArray.length - 1].slice(0, -1);
+                    if(expressionArray[expressionArray.length - 1] == "") expressionArray.pop() 
+                }
+                else {
+                    expressionArray.pop()
+                }
+                textBox.textContent = expressionArray.join("")
+            } 
         } 
         //Equal to
-        else if (this.id === "=") {
-            if (expressionArray.length == 0) return;
+        else if (buttonName === "=") {
+            return function () {
+                if (expressionArray.length == 0) return;
             if (["+", "-", "/", "*", "%"].indexOf(expressionArray[expressionArray.length -2]) != -1 
             || expressionArray[expressionArray.length - 1] == "(") return;
             self.evalWorker(self.balanceExpression(expressionArray));
             textBox.textContent = ""
+            } 
         } 
         //Operators
-        else if (["+", "-", "/", "*", "%"].indexOf(this.id) > -1) {
-            if (expressionArray.length == 0) return;
-            if (["+", "-", "/", "*", "%"].indexOf(expressionArray[expressionArray.length -2]) == -1) {
-                expressionArray.push(...[" ", this.id, " "])
-
-            } else {
-                expressionArray.splice(-2)
-                expressionArray.push(...[this.id," "])
+        else if (["+", "-", "/", "*", "%"].indexOf(buttonName) > -1) {
+            return function () {
+                if (expressionArray.length == 0) return;
+                if (["+", "-", "/", "*", "%"].indexOf(expressionArray[expressionArray.length -2]) == -1) {
+                    expressionArray.push(...[" ", this.id, " "])
+    
+                } else {
+                    expressionArray.splice(-2)
+                    expressionArray.push(...[this.id," "])
+                }
+                textBox.textContent = expressionArray.join("")
             }
-            textBox.textContent = expressionArray.join("")
-
         } 
         //Brackets
-        else if (this.id == "(") {
-            bracketCount++;
-            if(parseFloat(expressionArray[expressionArray.length - 1]) || expressionArray[expressionArray.length - 1] == ")"){
-                
-                expressionArray.push(...[" ","*"," ", "("])
-            }else {
-                expressionArray.push(this.id)
-            }
-            textBox.textContent = expressionArray.join("")
-        } 
-        
-        else if (this.id == ")") {
-            if (!(bracketCount <= 0)) {
-                bracketCount--;
-                if(expressionArray[expressionArray.length -1] == "(") {
-                    expressionArray.push(...["0", this.id])
-                } else {
+        else if (buttonName == "(") {
+            return function () {
+                bracketCount++;
+                if(bracketCount > 0) document.getElementById(")").style.backgroundColor = "#344e70";
+                if(parseFloat(expressionArray[expressionArray.length - 1]) || expressionArray[expressionArray.length - 1] == ")"){
+                    
+                    expressionArray.push(...[" ","*"," ", "("])
+                }else {
                     expressionArray.push(this.id)
                 }
                 textBox.textContent = expressionArray.join("")
             }
         } 
-        //Sign change
-        else if (this.id == "+/-") {
-            let number = expressionArray[expressionArray.length - 1];
-            if (parseFloat(number)) {
-                number = (parseFloat(number) * -1).toString();
-                expressionArray[expressionArray.length -1] = number
-                textBox.textContent = expressionArray.join("")
+        
+        else if (buttonName == ")") {
+            return function() {
+                if (!(bracketCount <= 0)) {
+                    bracketCount--;
+                    if(expressionArray[expressionArray.length -1] == "(") {
+                        expressionArray.push(...["0", this.id])
+                    } else {
+                        expressionArray.push(this.id)
+                    }
+                    textBox.textContent = expressionArray.join("")
+                    if(bracketCount <= 0 ) document.getElementById(")").style.backgroundColor = "#415369";
+                } 
             }
+        } 
+        //Sign change
+        else if (buttonName == "+/-") {
+            return function() {
+                let number = expressionArray[expressionArray.length - 1];
+                if (parseFloat(number)) {
+                    number = (parseFloat(number) * -1).toString();
+                    expressionArray[expressionArray.length -1] = number
+                    textBox.textContent = expressionArray.join("")
+                }
+            } 
         } 
         //Numbers
         else {
-            let number = expressionArray[expressionArray.length - 1];
-            if (parseFloat(number)) {
-                number += this.id;
-                expressionArray[expressionArray.length -1] += this.id
-            } else {
-                expressionArray.push(this.id)
+            return function () {
+                let number = expressionArray[expressionArray.length - 1];
+                if (parseFloat(number)) {
+                    number += this.id;
+                    expressionArray[expressionArray.length -1] += this.id
+                } else {
+                    expressionArray.push(this.id)
+                }
+                textBox.textContent = expressionArray.join("")
             }
-            textBox.textContent = expressionArray.join("")
         }
     }
 
     //Loads the  calculator
     this.intialiseCalculator = function () {
         for (let i = 0; i < 22; i++) {
-            let button = document.createElement('div');
-            button.setAttribute('id', buttonNames[i]);
-            button.textContent = buttonNames[i];
-            button.onclick = self.clickHandler;
-            grid.appendChild(button);
+            let callBack = this.callBacks(buttonNames[i])
+            let button = new Button(buttonNames[i], callBack)
+            grid.appendChild(button.getDiv());
         }
+        document.getElementById(")").style.backgroundColor = "#415369";
     }
 }
 const cl = new Calculator();
